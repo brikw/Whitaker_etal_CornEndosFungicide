@@ -1,0 +1,33 @@
+,Contig,OTU,Domain,Phylum,Class,Order,Family,Genus,GenBankName,Consensus.name,Contig_old
+1,Contig1,OTU1,Fungi,Ascomycota,Dothideomycetes,Pleosporales,Pleosporaceae,Alternaria,Alternaria,Alternaria sp. 1,OTU1
+2,Contig2,OTU2,Fungi,Ascomycota,Dothideomycetes,Pleosporales,Pleosporales inc. sed.,Epicoccum,Epicoccum,Epicoccum sp.,OTU2
+3,Contig3,OTU3,Fungi,Ascomycota,Sordariomycetes,Sordariomycetidae inc. sed.,Glomerellaceae,Colletotrichum,Colletotrichum,Colletotrichum sp. 1,OTU3
+4,Contig4,OTU4,Fungi,Ascomycota,Dothideomycetes,Pleosporales,,,Pleosporales,Unk.Pleosporales 1,OTU4
+5,Contig5,OTU5,Fungi,Ascomycota,Dothideomycetes,Pleosporales,,,Pleosporales,Unk.Pleosporales 2,OTU5
+6,Contig6,OTU6,Fungi,Ascomycota,Dothideomycetes,Pleosporales,Pleosporaceae,Alternaria,Alternaria,Alternaria sp. 2,OTU6
+7,Contig7,OTU7,Fungi,Ascomycota,Dothideomycetes,Capnodiales,Mycosphaerellaceae,Cladosporium,Cladosporium,Cladosporium sp.,OTU7
+8,Contig8,OTU8,Fungi,Ascomycota,Dothideomycetes,Pleosporales,,,Pleosporales,Unk.Pleosporales 3,OTU8
+9,Contig9,OTU9,Fungi,Ascomycota,Sordariomycetes,Sordariomycetidae inc. sed.,Glomerellaceae,Colletotrichum,Colletotrichum,Colletotrichum sp. 2,OTU9
+10,Contig10,OTU10,Fungi,Ascomycota,Dothideomycetes,Capnodiales,Mycosphaerellaceae,Cercospora,Cercospora,Cercospora sp.,OTU10
+11,Contig11,OTU11,Fungi,Ascomycota,Dothideomycetes,Pleosporales,,,Pleosporales,Unk.Pleosporales 4,OTU11
+12,Contig12,OTU12,Fungi,Ascomycota,,,,,Ascomycota,Unk.Ascomycota 1,OTU12
+13,Contig13,OTU13,Fungi,Ascomycota,Dothideomycetes,Pleosporales,,,Pleosporales,Unk.Pleosporales 5,OTU13
+14,Contig14,OTU14,Fungi,Ascomycota,Dothideomycetes,Pleosporales,Phaeosphaeriaceae,Ophiosphaerella,Ophiosphaerella,Ophiosphaerella sp.,OTU14
+15,C13-2-13,OTU15,Fungi,Ascomycota,Sordariomycetes,Xylariales,Xylariaceae,Xylaria,Xylaria,Xylaria sp. 1,C13-2-13
+16,C13-2-4,OTU16,Fungi,Ascomycota,Sordariomycetes,Sordariales,,,Sordariales,Unk.Sordariales,C13-2-4
+17,C14-3-12,OTU17,Fungi,Ascomycota,Dothideomycetes,Pleosporales,,,Pleosporales,Unk.Pleosporales 6,C14-3-12
+18,C27-1-7,OTU18,Fungi,Ascomycota,Sordariomycetes,Xylariales,Xylariaceae,Xylaria,Xylaria,Xylaria sp. 2,C27-1-7
+19,C28-1-19,OTU19,Fungi,Ascomycota,Dothideomycetes,Pleosporales,Pleosporaceae,Curvularia,Curvularia,Curvularia sp.,C28-1-19
+20,C28-2-17,OTU20,Fungi,Ascomycota,Leotiomycetes,Helotiales,,,Helotiales,Unk.Helotiales,C28-2-17
+21,C33-1-10,OTU21,Fungi,Ascomycota,Sordariomycetes,Diaporthales,Diaporthaceae,Phomopsis,Phomopsis,Phomopsis sp.,C33-1-10
+22,C33-2-6,OTU22,Fungi,Ascomycota,Sordariomycetes,Xylariales,Xylariaceae,Nemania,Nemania,Nemania sp.,C33-2-6
+23,C33-3-7,OTU23,Fungi,Ascomycota,Dothideomycetes,Pleosporales,Phaeosphaeriaceae,,Phaeosphaeriaceae,Unk.Phaeosphaeriaceae 1,C33-3-7
+24,C37-1-9,OTU24,Fungi,Ascomycota,Sordariomycetes,Hypocreales,Nectriaceae,Gibberella,Gibberella,Fusarium sp.,C37-1-9
+25,C37-3-2,OTU25,Fungi,Ascomycota,,,,,Ascomycota,Unk.Ascomycota 2,C37-3-2
+26,G13-1-1,OTU26,Fungi,Basidiomycota,Ustilaginomycetes,Ustilaginales,Ustilaginaceae,Ustilago,Ustilago,Ustilago sp.,G13-1-1
+27,G13-1-2,OTU27,Fungi,Ascomycota,Dothideomycetes,Pleosporales,,,Pleosporales,Unk.Pleosporales 7,G13-1-2
+28,G13-2-6,OTU28,Fungi,Ascomycota,Dothideomycetes,Capnodiales,,,Capnodiales,Unk.Capnodiales,G13-2-6
+29,G28-2-1,OTU29,Fungi,Ascomycota,Dothideomycetes,Pleosporales,Phaeosphaeriaceae,,Phaeosphaeriaceae,Unk.Phaeosphaeriaceae 2,G28-2-1
+30,G28-3-4,OTU30,Fungi,Ascomycota,Eurotiomycetes,Eurotiales,Trichocomaceae,Penicillium,Penicillium,Penicillium sp.,G28-3-4
+31,G28-3-5,OTU31,Fungi,Ascomycota,Dothideomycetes,Pleosporales,Phaeosphaeriaceae,,Phaeosphaeriaceae,Unk.Phaeosphaeriaceae 3,G28-3-5
+32,G33-2-8,OTU32,Fungi,Ascomycota,Dothideomycetes,,,,Dothideomycetes,Unk.Dothideomycetes,G33-2-8
