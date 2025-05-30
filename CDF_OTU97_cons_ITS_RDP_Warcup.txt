@@ -1,0 +1,32 @@
+C13-2-13		Fungi	domain	1.0	Ascomycota	phylum	1.0	Sordariomycetes	class	1.0	Xylariales	order	1.0	Xylariaceae	family	1.0	Xylaria	genus	1.0	Xylaria acuta	species	1.0
+C13-2-4		Fungi	domain	1.0	Ascomycota	phylum	1.0	Sordariomycetes	class	0.99	Sordariales	order	0.98	Chaetomiaceae	family	0.89	Chaetomium	genus	0.66	Chaetomium madrasense	species	0.17
+C14-3-12		Fungi	domain	1.0	Ascomycota	phylum	1.0	Dothideomycetes	class	1.0	Pleosporales	order	1.0	Phaeosphaeriaceae	family	0.8	Phaeosphaeriopsis	genus	0.56	Phaeosphaeria oryzae	species	0.56
+C27-1-7		Fungi	domain	1.0	Ascomycota	phylum	1.0	Sordariomycetes	class	1.0	Xylariales	order	1.0	Xylariaceae	family	1.0	Xylaria	genus	1.0	Xylaria oxyacanthae	species	1.0
+C28-1-19		Fungi	domain	1.0	Ascomycota	phylum	1.0	Dothideomycetes	class	1.0	Pleosporales	order	1.0	Pleosporaceae	family	1.0	Curvularia	genus	0.99	Curvularia inaequalis	species	0.65
+C28-2-17		Fungi	domain	1.0	Ascomycota	phylum	1.0	Leotiomycetes	class	0.82	Helotiales	order	0.81	Dermateaceae	family	0.21	Pezicula	genus	0.17	Pezicula corylina	species	0.08
+C33-1-10		Fungi	domain	1.0	Ascomycota	phylum	1.0	Sordariomycetes	class	1.0	Diaporthales	order	1.0	Diaporthaceae	family	1.0	Diaporthe	genus	1.0	Phomopsis longicolla	species	1.0
+C33-2-6		Fungi	domain	1.0	Ascomycota	phylum	1.0	Sordariomycetes	class	1.0	Xylariales	order	1.0	Xylariaceae	family	1.0	Nemania	genus	1.0	Nemania sp JJP_2009a	species	1.0
+C33-3-7		Fungi	domain	1.0	Ascomycota	phylum	1.0	Dothideomycetes	class	1.0	Pleosporales	order	1.0	Phaeosphaeriaceae	family	1.0	Phaeosphaeria	genus	1.0	Phaeosphaeria herpotrichoides	species	0.99
+C37-1-9		Fungi	domain	1.0	Ascomycota	phylum	1.0	Sordariomycetes	class	1.0	Hypocreales	order	1.0	Nectriaceae	family	1.0	Gibberella	genus	1.0	Fusarium cf equiseti MY_2011	species	0.53
+C37-3-2		Fungi	domain	1.0	Ascomycota	phylum	0.94	Pezizomycotina_Incertae sedis	class	0.49	Pezizomycotina_Incertae sedis	order	0.49	Pezizomycotina_Incertae sedis	family	0.49	Scolecobasidium	genus	0.44	Scolecobasidium terreum	species	0.44
+Contig1		Fungi	domain	1.0	Ascomycota	phylum	1.0	Dothideomycetes	class	1.0	Pleosporales	order	1.0	Pleosporaceae	family	1.0	Alternaria	genus	1.0	Alternaria alternata	species	0.45
+Contig10		Fungi	domain	1.0	Ascomycota	phylum	1.0	Dothideomycetes	class	1.0	Capnodiales	order	1.0	Mycosphaerellaceae	family	1.0	Mycosphaerella	genus	1.0	Cercospora apii	species	1.0
+Contig11		Fungi	domain	1.0	Ascomycota	phylum	1.0	Dothideomycetes	class	1.0	Pleosporales	order	0.98	Phaeosphaeriaceae	family	0.94	Phaeosphaeriopsis	genus	0.85	Phaeosphaeria oryzae	species	0.85
+Contig12		Fungi	domain	1.0	Ascomycota	phylum	1.0	Dothideomycetes	class	1.0	Pleosporales	order	1.0	Pleosporaceae	family	1.0	Epicoccum	genus	1.0	Epicoccum sorghi	species	1.0
+Contig13		Fungi	domain	1.0	Ascomycota	phylum	1.0	Dothideomycetes	class	1.0	Pleosporales	order	0.88	Phaeosphaeriaceae	family	0.55	Phaeosphaeria	genus	0.43	Phaeosphaeria phragmitis	species	0.25
+Contig14		Fungi	domain	1.0	Ascomycota	phylum	1.0	Dothideomycetes	class	1.0	Pleosporales	order	1.0	Phaeosphaeriaceae	family	1.0	Ophiosphaerella	genus	1.0	Ophiosphaerella agrostis	species	1.0
+Contig2		Fungi	domain	1.0	Ascomycota	phylum	1.0	Dothideomycetes	class	1.0	Pleosporales	order	1.0	Pleosporales_Incertae sedis	family	1.0	Phoma	genus	1.0	Epicoccum nigrum	species	0.75
+Contig3		Fungi	domain	1.0	Ascomycota	phylum	1.0	Sordariomycetes	class	1.0	Sordariomycetidae_Incertae sedis	order	1.0	Glomerellaceae	family	1.0	Glomerella	genus	1.0	Glomerella magna	species	0.6
+Contig4		Fungi	domain	1.0	Ascomycota	phylum	1.0	Dothideomycetes	class	1.0	Pleosporales	order	1.0	Phaeosphaeriaceae	family	0.98	Phaeosphaeria	genus	0.98	Phaeosphaeria sp 1 MM_2012	species	0.95
+Contig5		Fungi	domain	1.0	Ascomycota	phylum	1.0	Dothideomycetes	class	1.0	Pleosporales	order	0.87	Pleosporaceae	family	0.36	Alternaria	genus	0.34	Alternaria padwickii	species	0.33
+Contig6		Fungi	domain	1.0	Ascomycota	phylum	1.0	Dothideomycetes	class	1.0	Pleosporales	order	1.0	Pleosporaceae	family	1.0	Lewia	genus	1.0	Alternaria triticina	species	0.64
+Contig7		Fungi	domain	1.0	Ascomycota	phylum	1.0	Dothideomycetes	class	1.0	Capnodiales	order	1.0	Mycosphaerellaceae	family	1.0	Davidiella	genus	1.0	Cladosporium rectoides	species	0.61
+Contig8		Fungi	domain	1.0	Ascomycota	phylum	1.0	Dothideomycetes	class	1.0	Pleosporales	order	0.97	Phaeosphaeriaceae	family	0.94	Phaeosphaeriopsis	genus	0.74	Phaeosphaeria oryzae	species	0.73
+Contig9		Fungi	domain	1.0	Ascomycota	phylum	1.0	Sordariomycetes	class	1.0	Sordariomycetidae_Incertae sedis	order	1.0	Glomerellaceae	family	1.0	Glomerella	genus	1.0	Colletotrichum navitas	species	0.57
+G13-1-1		Fungi	domain	1.0	Basidiomycota	phylum	1.0	Ustilaginomycetes	class	1.0	Ustilaginales	order	1.0	Ustilaginaceae	family	1.0	Ustilago	genus	1.0	Ustilago bullata	species	1.0
+G13-1-2		Fungi	domain	1.0	Ascomycota	phylum	1.0	Dothideomycetes	class	1.0	Pleosporales	order	0.88	Pleomassariaceae	family	0.38	Helminthosporium	genus	0.38	Helminthosporium solani	species	0.38
+G13-2-6		Fungi	domain	1.0	Ascomycota	phylum	1.0	Dothideomycetes	class	1.0	Capnodiales	order	1.0	Capnodiales_Incertae sedis	family	1.0	Phaeotheca	genus	1.0	Phaeotheca triangularis	species	1.0
+G28-2-1		Fungi	domain	1.0	Ascomycota	phylum	1.0	Dothideomycetes	class	1.0	Pleosporales	order	0.83	Phaeosphaeriaceae	family	0.75	Phaeosphaeria	genus	0.57	Phaeosphaeria sp JF_2013	species	0.25
+G28-3-4		Fungi	domain	1.0	Ascomycota	phylum	1.0	Eurotiomycetes	class	1.0	Eurotiales	order	1.0	Trichocomaceae	family	1.0	Eupenicillium	genus	1.0	Penicillium chrysogenum	species	0.48
+G28-3-5		Fungi	domain	1.0	Ascomycota	phylum	1.0	Dothideomycetes	class	1.0	Pleosporales	order	0.91	Phaeosphaeriaceae	family	0.88	Phaeosphaeria	genus	0.85	Phaeosphaeria phragmitis	species	0.71
+G33-2-8		Fungi	domain	1.0	Ascomycota	phylum	1.0	Dothideomycetes	class	1.0	Capnodiales	order	0.27	Mycosphaerellaceae	family	0.27	Septoria	genus	0.27	Septoria arundinacea	species	0.27

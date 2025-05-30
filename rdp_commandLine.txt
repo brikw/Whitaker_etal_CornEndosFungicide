@@ -1,0 +1,12 @@
+cd "C:/Users/Briana.Whitaker/Documents/GitHubRepos"
+
+java -Xmx1g -jar C:/Users/Briana.Whitaker/Documents/GitHubRepos/rdp_classifier_2.14/dist/classifier.jar
+
+java -Xmx1g -jar C:/Users/Briana.Whitaker/Documents/GitHubRepos/rdp_classifier_2.14/dist/classifier.jar classify -c 0.8 -f fixrank -g fungalits_warcup -o "C:/Users/Briana.Whitaker/OneDrive - USDA/2-ResearchProjects/2022-CornDebrisFungicides/Data/Sequencing/ab1/ITSx/CDF_OTU97_cons_ITS_RDP_Warcup.txt" "C:/Users/Briana.Whitaker/OneDrive - USDA/2-ResearchProjects/2022-CornDebrisFungicides/Data/Sequencing/ab1/ITSx/CDF_OTU97_cons_ITS.fasta"
+java -Xmx1g -jar C:/Users/Briana.Whitaker/Documents/GitHubRepos/rdp_classifier_2.14/dist/classifier.jar classify -c 0.8 -f fixrank -g fungallsu -o "C:/Users/Briana.Whitaker/OneDrive - USDA/2-ResearchProjects/2022-CornDebrisFungicides/Data/Sequencing/ab1/ITSx/CDF_OTU97_cons_LSU_RDP_LSUTrain.txt" "C:/Users/Briana.Whitaker/OneDrive - USDA/2-ResearchProjects/2022-CornDebrisFungicides/Data/Sequencing/ab1/ITSx/CDF_OTU97_cons_LSU.fasta"
+
+
+
+#https://github.com/rdpstaff/classifier
+
+#end
