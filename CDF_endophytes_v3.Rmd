@@ -1,0 +1,943 @@
+---
+title: "CDF_endophytes"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+author: "Briana K. Whitaker"
+date: "`r Sys.Date()`"
+---
+\fontsize{9}{10}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning =FALSE, message=FALSE)
+```
+---
+
+
+* Run using `r version[['version.string']] `.
+
+
+
+```{r, echo=FALSE, results='hide', include=FALSE}
+#setwd("C:/Users/Briana.Whitaker/OneDrive - USDA/2-ResearchProjects/2022-CornDebrisFungicides")
+
+x<-c("dplyr",  "ggplot2", "vegan" , "car", "lme4", "viridis", "RRPP",
+     "grDevices", "tidyr", "indicspecies")
+lapply(x, require, character.only = TRUE)
+#require(nlme)
+
+#Load functions
+source("./multiplot.function.R")
+`%nin%` <- Negate(`%in%`)
+
+set.seed(407)
+
+# function for ellipsess - 
+veganCovEllipse <- function (cov, center = c(0, 0), scale = 1, npoints = 100)   {
+  theta <- (0:npoints) * 2 * pi/npoints
+  Circle <- cbind(cos(theta), sin(theta))
+  t(center + scale * t(Circle %*% chol(cov)))    }
+
+myMEAN <- function(x) {
+    x1 <- na.omit(x)  #number of omitted values length(attr(test,"na.action"))
+    MEAN <- mean(x1)
+}
+mySD <- function(x) {
+    x1 <- na.omit(x)  #number of omitted values length(attr(test,"na.action"))
+    SD <- sd(x1)
+}
+
+myREP <- function(x) {
+    x1 <- na.omit(x)  #number of omitted values length(attr(test,"na.action"))
+    REP <- length(x1) #number of values used in mean
+}
+
+
+# set ggplot2 theme
+theme_set(theme_bw(base_size=14)) 
+theme_update(panel.grid.major=element_line(0), panel.grid.minor=element_line(0))
+
+
+trt_color <- c("#66C2A5","#66C2A5", "#FC8D62", "#FC8D62")
+fung_color <- c("#8DA0CB", "#E78AC3")
+```
+
+
+
+# Load Data
+```{r}
+plot <- read.csv("./Data/CornDebrisFungicides_ExperimentalDesign-Plots.csv",
+                 stringsAsFactors = TRUE)
+samps <- read.csv("./Data/CornDebrisFungicides_ExperimentalDesign-CultureSamples.csv",
+                 stringsAsFactors = TRUE)   
+                 #*NOTE -mismatch in orig names C208 vs. C-208, manually fixed
+isols <- read.csv("./Data/CornDebrisFungicides_ExperimentalDesign-Isolates-2023-06-27.csv",
+                 stringsAsFactors = TRUE)
+                 #*NOTE - problem with naming of sample_ID in this sheet C208 
+                 #*rather than C-208, etc. had to manually rename
+taxon <- read.csv("./Data/Sequencing/ab1/ITSx/CDF_OTU97_cons_RDP_Combined.csv",
+                  row.names = 1)   
+
+```
+
+```{r, include = FALSE}
+# add OTU info to taxon file
+#key <- isols %>% select(OTU, contig.name) %>% unique
+#taxon$OTU <- key$OTU[match(taxon$Contig, key$contig.name)]
+
+
+#merge trt info
+samps <- merge(samps, plot, by=c("PlotID"), all.x=TRUE)
+isols <- merge(isols, samps, by="Sample_ID", all.x = TRUE)
+
+# add sample level IF
+IF <- as.data.frame(table(isols$Sample_ID))
+identical(sort(IF$Var1), sort(samps$Sample_ID))
+samps <- merge(samps, IF, by.x = "Sample_ID", by.y = "Var1", all.x = TRUE)
+samps$IF <- samps$Freq/32
+
+# add treatment combo
+samps$Trt <- as.factor(paste(samps$Site, samps$FungicideTrt, sep = "-"))
+levels(samps$Trt)[1] <- "Champaign-Control"
+levels(samps$Trt)[2] <- "Champaign-Delaro"
+levels(samps$Trt)[3] <- "Gilman-Control"
+levels(samps$Trt)[4] <- "Gilman-Delaro"
+
+# make factor
+samps$PlotNum <- as.factor(samps$PlotNum)
+
+# Create SbyS
+table(isols$sequenced, isols$Site)
+(252+25+11+0)/(294)  #98.0% of the data for Champaign site
+(84+36+13+2)/(137)     #98.5% of the data for Gilman site
+# 6 failed and 2 failed to amplify from Champ and Gilman
+
+#subset to completed seqs
+done <- isols %>% filter(isols$sequenced == "yes-pt1" | 
+                         isols$sequenced == "yes-pt2" |
+                         isols$sequenced == "yes-pt3" |
+                         isols$sequenced == "yes-pt4" )
+
+done <- droplevels(done)
+```
+
+
+### Make SbyS and Calculate Diversity
+```{r, include = FALSE}
+# create SbyS (completed sequences)
+SbyS <- as.matrix(table(done$Sample_ID , done$OTU))
+
+# rename column headers by taxon name
+colnames(SbyS) <- paste(colnames(SbyS), 
+    taxon$GenBankName[match(colnames(SbyS), taxon$OTU)],
+    sep = ":")
+
+# without Singletons
+singles <- colSums(SbyS)
+to.remove <- names(singles[singles==1 | singles == 0])
+SbyS.noSing <- SbyS[,colnames(SbyS) %nin% to.remove] 
+
+
+# Hellinger transformation
+SbyS.hel <- as.data.frame.matrix(decostand(SbyS.noSing, method = "hellinger")) 
+            # samples are rows (MARGIN = 1 default)
+rownames(samps) <- samps$Sample_ID
+identical((rownames(SbyS.hel)), (rownames(samps))) # sanity check
+rowSums(SbyS.hel)
+
+
+
+
+# compute diversity info
+Sdat <- data.frame(specnumber(SbyS), diversity(SbyS, index = "shannon"),
+                   diversity(SbyS, index = "invsimpson"))
+rownames(Sdat) -> Sdat$Sample_ID
+colnames(Sdat) <- c("Sdiv", "Hdiv", "Simp", "Sample_ID")
+#plot(Hdiv ~ Sdiv, data = Sdat)
+#plot(Hdiv ~ Simp, data = Sdat)
+
+# merge data
+samps <- merge(samps, Sdat, by="Sample_ID", all.x = TRUE)
+samps$Site_short <- sapply(samps$Site, function(x) substring(x, 1, 1))
+rownames(samps) <- samps$Sample_ID
+
+
+# create a means dataset for making barplots
+samp_means <- data.frame(
+    Trt=c(levels(samps$Trt)),
+    Site = c(rep(levels(samps$Site), each = 2)),
+    FungicideTrt=c(rep(levels(samps$FungicideTrt),2)),
+
+    #IF
+    IF_mean=as.vector(tapply(samps$IF, list(samps$Trt), myMEAN)),
+    IF_sd=as.vector(tapply(samps$IF, list(samps$Trt), mySD)),
+    IF_rep=as.vector(tapply(samps$IF, list(samps$Trt), myREP)),
+    
+    #Sdiv
+    Sdiv_mean=as.vector(tapply(samps$Sdiv, list(samps$Trt), myMEAN)),
+    Sdiv_sd=as.vector(tapply(samps$Sdiv, list(samps$Trt), mySD)),
+    Sdiv_rep=as.vector(tapply(samps$Sdiv, list(samps$Trt), myREP)),
+    
+    #Hdiv
+    Hdiv_mean=as.vector(tapply(samps$Hdiv, list(samps$Trt), myMEAN)),
+    Hdiv_sd=as.vector(tapply(samps$Hdiv, list(samps$Trt), mySD)),
+    Hdiv_rep=as.vector(tapply(samps$Hdiv, list(samps$Trt), myREP))
+    )
+
+### compute singleton info
+SbyS.onlySing <- SbyS[,colnames(SbyS) %in% to.remove]
+samps$Singles <- rowSums(SbyS.onlySing)
+
+
+```
+
+### Experimental Design
+```{r}
+table(samps$Site, samps$FungicideTrt)
+table(samps$Site, samps$PlotID) #nested
+table(samps$PlotID, samps$FungicideTrt, samps$Site) #nested
+
+```
+
+
+
+# Descriptive stats for MS
+```{r}
+dim(SbyS.noSing)
+dim(SbyS)
+# 14 non singleton OTUs, 32 OTUs total (so 18 singleton OTUs)
+
+
+samps %>% 
+  group_by(Site) %>%  #, FungicideTrt
+  summarize(mean = myMEAN(IF), sd = mySD(IF)) %>% 
+  ungroup %>% as.data.frame -> IF_summ
+IF_summ
+
+table(isols$Site)
+table(isols$FungicideTrt)
+
+#table(isols$OTU, isols$Site)>0
+#table(isols$OTU, isols$FungicideTrt)>0
+
+table(isols$contig.name)
+
+```
+
+# Other Figures
+### Rarefaction Curves
+```{r, echo = FALSE, fig.width = 4}
+# Make subsets
+champ.ids <- samps$Sample_ID[samps$Site=="Champ-Kleczewski"]
+gilman.ids <- samps$Sample_ID[samps$Site=="Gilman-Kleczewski"]
+champ.site <- SbyS[(rownames(SbyS) %in% champ.ids),]
+gilman.site <- SbyS[(rownames(SbyS) %in% gilman.ids),]
+
+cont.ids <- samps$Sample_ID[samps$FungicideTrt =="Control"]
+fung.ids <- samps$Sample_ID[samps$FungicideTrt=="Delaro Complete 12oz"]
+cont.trt <- SbyS[(rownames(SbyS) %in% cont.ids),]
+fung.trt <- SbyS[(rownames(SbyS) %in% fung.ids),]
+
+#make curves
+x.full <- specaccum(SbyS, method='random', permutations=999, gamma="bootstrap")
+x.collector <- specaccum(SbyS, method='collector', permutations=999, gamma="bootstrap")
+
+x.champ <- specaccum(champ.site, method='random', permutations=999, gamma="bootstrap")
+x.gilman <- specaccum(gilman.site, method='random', permutations=999, gamma="bootstrap")
+
+x.cont <- specaccum(cont.trt, method='random', permutations=999, gamma="bootstrap")
+x.fung <- specaccum(fung.trt, method='random', permutations=999, gamma="bootstrap")
+
+# make data formatted for abundance plot
+total <- sum(colSums(SbyS))
+otu_Count <- data.frame(sort(colSums(SbyS), dec = TRUE))
+colnames(otu_Count) <- "Count"
+otu_Count$pi <- otu_Count$Count/total
+otu_Count$otu <- rownames(otu_Count)
+otu_Count$otu <- factor(otu_Count$otu, levels = rownames(otu_Count))
+otu_Count <- otu_Count %>% filter(Count > 3)
+
+# # Panel A - Abundance Plot
+# abund_plot <- ggplot(otu_Count, aes(x = otu, y = pi)) +
+#     geom_bar(stat = 'identity', fill = "navyblue", colour = 'black') +
+#     theme(axis.text.x = element_text(angle = 30, hjust = 0.95)) +
+#     scale_y_continuous("Relative\nAbundance", expand = c(0, 0)) +
+#     scale_x_discrete("") +
+#     labs(subtitle='(a)') +
+#     theme(axis.text = element_text(size = 10), axis.title.y = element_text(size = 11),
+#           axis.title.x = element_blank(), plot.subtitle=element_text(size=11, face = 'bold')) 
+# abund_plot
+
+
+#tiff("./Fig2_rarecurves.tiff", width=3.25, height=8, units="in", res=600)
+#change native R graphics to Helvetica font
+windowsFonts(A = windowsFont("Helvetica")) #, "Helvetica Bold", "Helvetica Oblique","Helvetica Bold Oblique"
+# Potential panel figure
+par(mfrow = c(3,1), mar=c(4.1,4.1,1.1,0.4), oma=c(0,0,0,0), family = "A")  #bot,L,top,R
+# # panel A - leave empty
+# plot.new() 
+# # panel A - native R plot
+plot(x.full, add=FALSE, lwd=2, ci.type="line", ci.col="black", ci.lty=2, 
+     xlab="No. of Plant Samples", ylab="Accumulated Taxa", xlim=c(0,36))
+plot(x.collector, add=TRUE, lwd=2, col="red")
+legend(24,18, bty="n", c("Estimated S","Observed S","95% CIs"),
+       lty=c(1,1,2),col=c("black","red","black"),lwd=1.3, cex=0.9)
+title(main="(a)", adj=0, cex.main=1.4)
+
+# panel B - native R plot
+plot(x.cont, add=FALSE, lwd=3, ci=0, lty=1, col="#1B9E77",
+     xlab="No. of Plant Samples", ylab="Accumulated Taxa", xlim=c(0,18), ylim=c(0,25))
+plot(x.gilman, add=TRUE, lwd=3, ci=0, lty=2, col="#D95F02")
+legend(12,9.5, bty="n", c("Champaign","Gilman"),
+       lty=c(1:3),col=c("#1B9E77","#D95F02"), lwd=1.3, cex=0.9)
+title(main="(b)", adj=0, cex.main=1.4)
+
+# panel C - native R plot
+plot(x.champ, add=FALSE, lwd=3, ci=0, lty=1, col="#8DA0CB",
+     xlab="No. of Plant Samples", ylab="Accumulated Taxa", xlim=c(0,18), ylim=c(0,25))
+plot(x.fung, add=TRUE, lwd=3, ci=0, lty=2, col="#E78AC3")
+legend(12.5,9.5, bty="n", c("Control","Delaro"),
+       lty=c(1:3),col=c("#8DA0CB","#E78AC3"), lwd=1.3, cex=0.9)
+title(main="(c)", adj=0, cex.main=1.4)
+
+# # overlay panel A - using grid package, 
+# vp <- grid::viewport(height = unit(1/4,"npc"), width=unit(1, "npc"), 
+#               just = "top",
+#               y = 1, x = 0.5)
+# print(abund_plot, vp = vp)
+
+#dev.off()
+```
+
+
+### Rel. Abund. Plot
+```{r, echo = FALSE, results = 'hide'}
+top <- sort(colSums(SbyS), decreasing = TRUE)[1:9]
+topASVs <- names(top)
+otherASVs <- c(colnames(SbyS)[colnames(SbyS) %nin% topASVs])
+
+#identical(rownames(samps), rownames(SbyS)) #must be TRUE
+
+#merge sample data with rel.abundance of OTUs
+out <- samps  %>% select(Trt, Site, FungicideTrt)
+SbyStot <- decostand(SbyS,"total")[,topASVs]
+Other <- rowSums(decostand(SbyS,"total")[,otherASVs])
+SbyS_rel <- cbind(SbyStot, Other)
+dat <- cbind(out, SbyS_rel)
+# covert to long-format
+dat2 <- reshape2::melt(dat, id.vars=c("Trt", "Site", "FungicideTrt"))
+
+# make an ASV color variable, with gray for 'other'
+# asv_color <- c(viridis_pal(option = "plasma")(length(levels(dat2$variable))-1),
+#                "#696969")
+asv_color <- c("#e60049", "#0bb4ff", "#50e991", "#e6d800", "#9b19f5", 
+               "#ffa300", "#dc0ab4", "#b3d4ff", "#00bfa0",     "#696969") 
+
+trt.dat = dat2 %>% group_by(Trt, variable) %>% summarize(value = sum(value))
+a <- ggplot(trt.dat, aes(x = Trt, y = value, fill = variable)) +
+  geom_bar(stat = "identity", position = 'fill') +
+  scale_fill_manual("Fungi Names", values = asv_color) +
+  xlab("") + ylab("Relative Abundance of Fungal Endophytes") +
+  #guides(fill = guide_legend(nrow=5, byrow=TRUE)) +
+  theme_bw() +
+  theme(axis.text.x  = element_text(angle=55, hjust = .95,  size=10),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 9),
+        legend.margin = margin(c(0,5,0,0)),
+        plot.margin = unit(c(1,1,1,1), "mm")) 
+  #legend.position = 'bottom'
+  #theme(axis.title.x = element_text(size=8),
+  #      axis.text.x  = element_text(size=8)) +
+#tiff("./Fig1_RelAbun_trt.tiff", width=3.25, height=5, units="in", res=600)
+a
+#dev.off()
+```
+
+
+### OTU Violin plots
+```{r, include = FALSE}
+otu_plot <- ggplot(dat2[dat2$variable!="Other",], aes(x = Trt, y = value, fill = Site)) +
+    facet_grid(variable~., scales = "free") +
+    geom_violin() +
+    geom_jitter(width=.1, height = 0) +
+    scale_fill_manual("Names", values = trt_color[c(1,3)]) +
+    scale_x_discrete("Location & Fungicide Treatment") + 
+    scale_y_continuous("Relative Abundance of Different Fungi per Plant") +
+    theme(axis.text.x  = element_text(angle=60, vjust=0.5, size=10)) +
+    guides(fill = "none")
+#tiff("./OTUs_trt.tiff", width=4, height=10, units="in", res=600)
+otu_plot
+#dev.off()
+```
+
+# Alpha Diversity & IF
+### IF
+```{r}
+par(mfrow = c(1,1))
+hist(samps$IF)
+par(mfrow = c(2,2))
+
+# Isolation Frequency
+if1 <- lm(IF ~ Site_short*FungicideTrt, data=samps,      
+          #should really have plot as random int. ?
+                 na.action=na.omit)
+Anova(if1, type = 3)
+summary(if1)
+plot(if1)
+
+# if1a <- lmer(IF ~ Site_short*FungicideTrt + (1|PlotID), data=samps,      
+#                  na.action=na.omit)
+# # isSingular model, not able to estimate PlotID residuals
+# Anova(if1a, type = 3)
+# summary(if1a)  #PlotID variance is 0, that's why singular model
+
+
+
+# if1b <- lm.rrpp(IF ~  Site_short + FungicideTrt +
+#                       Site_short:FungicideTrt + Site_short:FungicideTrt:PlotID,
+#                  data = samps, iter = 999, print.progress = FALSE, SS.type="III")   
+# #anova(rrpp1a, effect.type = "F")
+# anova(if1b, effect.type = "F", 
+#      error = c("Site_short:FungicideTrt:PlotID", "Site_short:FungicideTrt:PlotID",
+#                "Site_short:FungicideTrt:PlotID", "Residuals"))
+#                                Df      SS       MS     Rsq      F        Z Pr(>F)  
+# Site_short                      1 0.08610 0.086100 0.06294 7.1007  2.01014  0.018 *
+# FungicideTrt                    1 0.04704 0.047038 0.03439 3.8792  1.60837  0.043 *
+# Site_short:FungicideTrt         1 0.01172 0.011719 0.00857 0.9664  0.53871  0.311  
+# Site_short:FungicideTrt:PlotID  8 0.09701 0.012126 0.07091 0.4817 -1.13353  0.873  
+# Residuals                      24 0.60417 0.025174 0.44167                         
+#summary(if1b)
+
+
+range(samps$IF)
+tapply(samps$IF, samps$Site, mean)
+
+```
+### Richness
+```{r}
+par(mfrow = c(2,2))
+
+# Richness
+rich1 <- glm(Sdiv ~ Site_short*FungicideTrt, data=samps,      
+             #should really have plot as random int. ?
+                 family=poisson, na.action=na.omit)
+Anova(rich1, type = 3)
+summary(rich1)
+plot(rich1)
+#rich1$deviance/rich1$df.residual #0.63
+# dispersionStat <- function (x) 
+# {
+#     pr <- sum(residuals(x, type = "pearson")^2)
+#     dispersion <- pr/x$df.residual
+#     return(c(pearson.chi2 = pr, dispersion = dispersion))
+# }
+# dispersionStat(rich1) # dispersion 0.6215236
+
+
+# rich2 <- glmer(Sdiv ~ Site_short*FungicideTrt + (1|PlotID), data=samps,      
+#                  family=poisson, na.action=na.omit)
+# # result isSIngular = TRUE
+# Anova(rich2, type = 3)  
+# #summary(rich2)   #can't estimate plot intercept effect, variance = 0
+
+# rich2a <- lm.rrpp(Sdiv ~  Site_short + FungicideTrt +
+#                       Site_short:FungicideTrt + Site_short:FungicideTrt:PlotID,
+#                  data = samps, iter = 999, print.progress = FALSE, SS.type="III")   
+# #anova(rrpp1a, effect.type = "F")
+# anova(rich2a, effect.type = "F", 
+#      error = c("Site_short:FungicideTrt:PlotID", "Site_short:FungicideTrt:PlotID",
+#                "Site_short:FungicideTrt:PlotID", "Residuals"))
+#                                Df      SS     MS     Rsq      F        Z Pr(>F)
+# Site_short                      1   6.000 6.0000 0.05192 2.5116  1.22566  0.116
+# FungicideTrt                    1   2.667 2.6667 0.02308 1.1163  0.69218  0.255
+# Site_short:FungicideTrt         1   0.083 0.0833 0.00072 0.0349 -1.06026  0.841
+# Site_short:FungicideTrt:PlotID  8  19.111 2.3889 0.16538 0.9053 -0.03022  0.520
+# Residuals                      24  63.333 2.6389 0.54808                       
+# Total                          35 115.556                                      
+
+
+range(samps$Sdiv)
+tapply(samps$Sdiv, samps$Site, mean)
+
+```
+
+
+### Shannon Diversity
+```{r}
+par(mfrow = c(1,1))
+hist(samps$Hdiv)
+par(mfrow = c(2,2))
+
+
+# Diversity
+div1 <- lm(Hdiv ~ Site_short*FungicideTrt, data=samps, na.action=na.omit)
+Anova(div1, type = 3)
+summary(div1)
+plot(div1)
+
+
+# div2 <- lmer(Hdiv ~ Site_short*FungicideTrt + (1|PlotID), data=samps, 
+#              na.action=na.omit)
+# # result isSIngular = TRUE
+# Anova(div2, type = 3)  
+# #summary(div2)   #can't estimate plot intercept effect, variance = 0
+
+# div2a <- lm.rrpp(Hdiv ~  Site_short + FungicideTrt +
+#                       Site_short:FungicideTrt + Site_short:FungicideTrt:PlotID,
+#                  data = samps, iter = 999, print.progress = FALSE, SS.type="III")   
+# #anova(rrpp1a, effect.type = "F")
+# anova(div2a, effect.type = "F", 
+#      error = c("Site_short:FungicideTrt:PlotID", "Site_short:FungicideTrt:PlotID",
+#                "Site_short:FungicideTrt:PlotID", "Residuals"))
+#                                Df     SS       MS     Rsq      F        Z Pr(>F)
+# Site_short                      1 0.2032 0.203191 0.03156 1.4346  0.83909  0.212
+# FungicideTrt                    1 0.1759 0.175895 0.02732 1.2419  0.75485  0.234
+# Site_short:FungicideTrt         1 0.0301 0.030142 0.00468 0.2128 -0.35328  0.640
+# Site_short:FungicideTrt:PlotID  8 1.1331 0.141636 0.17599 0.9251  0.01883  0.496
+# Residuals                      24 3.6746 0.153109 0.57073                       
+# Total                          35 6.4385                                        
+
+
+range(samps$Hdiv)
+tapply(samps$Hdiv, samps$Site, mean)
+tapply(samps$Hdiv, samps$FungicideTrt, mean)
+```
+
+### Inverse Simpson
+```{r}
+par(mfrow = c(1,1))
+hist(sqrt(samps$Simp))
+par(mfrow = c(2,2))
+
+# Evenness
+simp1 <- lm(log(Simp) ~ Site_short*FungicideTrt, data=samps, na.action=na.omit)
+Anova(simp1, type = 3)
+summary(simp1)
+plot(simp1)  #not great
+
+
+# simp2 <- lmer(sqrt(Simp) ~ Site_short*FungicideTrt + (1|PlotID), data=samps, 
+#              na.action=na.omit)
+# # result isSIngular = TRUE
+# Anova(simp2, type = 3)  
+# #summary(simp2)   #can't estimate plot intercept effect, variance = 0
+
+# simp2a <- lm.rrpp(Simp ~  Site_short + FungicideTrt +
+#                       Site_short:FungicideTrt + Site_short:FungicideTrt:PlotID,
+#                  data = samps, iter = 999, print.progress = FALSE, SS.type="III")   
+# #anova(rrpp1a, effect.type = "F")
+# anova(simp2a, effect.type = "F", 
+#      error = c("Site_short:FungicideTrt:PlotID", "Site_short:FungicideTrt:PlotID",
+#                "Site_short:FungicideTrt:PlotID", "Residuals"))
+#                                Df      SS      MS     Rsq      F        Z Pr(>F)  
+# Site_short                      1  1.7341 1.73410 0.06046 1.3509  1.00123  0.156  
+# FungicideTrt                    1  2.9708 2.97078 0.10357 2.3143  1.32487  0.094 .
+# Site_short:FungicideTrt         1  0.0582 0.05817 0.00203 0.0453 -0.93314  0.817  
+# Site_short:FungicideTrt:PlotID  8 10.2693 1.28367 0.35804 2.2517  1.66847  0.042 *
+# Residuals                      24 13.6824 0.57010 0.47703                         
+# Total                          35 28.6825                                         
+
+
+range(samps$Simp) #inverse Simpsons
+tapply(samps$Simp, samps$Site, mean)
+tapply(samps$Simp, samps$FungicideTrt, mean)
+```
+
+
+
+### Figures
+```{r, echo = FALSE, results = 'hide'}
+samps %>% select(Sample_ID, IF, Sdiv, Hdiv, Simp, Trt, Site) %>% 
+    pivot_longer(cols = c("IF", "Sdiv", "Hdiv", "Simp"), 
+                 names_to = "Measure", values_to = "Value") -> samps_w
+samps_w$Measure <- factor(samps_w$Measure, levels = c("IF", "Sdiv", "Hdiv", "Simp"))
+
+my_labeller <- c('IF' = "a)  Isolation Frequency",
+                 'Sdiv' = "b)  Observed Richness",
+                 'Hdiv' = "c)  Shannon Diversity",
+                 'Simp' = "d)  Inverse Simpson")
+
+fungPanel <- ggplot(samps_w, aes(x = Trt, y = Value, fill = Site)) +
+    facet_grid(Measure~., scales = "free_y", 
+               labeller = labeller(Measure = my_labeller)) +
+    geom_boxplot(outlier.shape = NA) + 
+    #geom_violin() +
+    geom_jitter(size = 2, width =.15) +
+    scale_y_continuous("") +
+    scale_x_discrete("Site-Treatment") +
+    scale_fill_manual("", values = c("#66C2A5", "#FC8D62")) +
+    theme(axis.text.x  = element_text(angle=60, vjust=0.5, size=10),
+          legend.position="none", axis.title.y = element_blank())
+#tiff("./Fig3_IF_Richness_trt.tiff", width=3.25, height=9, units="in", res=600)
+fungPanel
+#dev.off()
+```
+
+```{r, include=FALSE}
+# boxplots, individual
+fungIF <- ggplot(samps, aes(x = Trt, y = IF, fill = Site)) +
+    geom_boxplot(outlier.shape = NA) + geom_jitter(size = 2, width =.1) +
+    scale_y_continuous("Fungal Isolation Frequency") +
+    scale_x_discrete("Site-Treatment") +
+    scale_fill_manual("", values = c("#66C2A5", "#FC8D62")) +
+    theme(axis.text.x  = element_text(angle=60, vjust=0.5, size=10),
+          legend.position="none")
+#tiff("./IF_trt.tiff", width=3.25, height=4, units="in", res=600)
+fungIF
+#dev.off()
+rich <- ggplot(samps, aes(x = Trt, y = Sdiv, fill = Site)) +
+    geom_boxplot(outlier.shape = NA) + geom_jitter(size = 2, width =.1) +
+    scale_y_continuous("Fungal Richness") +
+    scale_x_discrete("Site-Treatment") +
+    scale_fill_manual("", values = c("#66C2A5", "#FC8D62")) +
+    theme(axis.text.x  = element_text(angle=60, vjust=0.5, size=10),
+          legend.position="none")
+#tiff("./Richness_trt.tiff", width=3.25, height=4, units="in", res=600)
+rich
+#dev.off()
+
+# barplots, individual
+# ggplot(samp_means, aes(x = Trt, y = IF_mean, fill = Site)) +
+#     geom_bar(stat = "identity", color = 'black') +
+#     geom_errorbar(aes(ymin=IF_mean-IF_sd, ymax=IF_mean+IF_sd), width=.2) +
+#     scale_y_continuous("Fungal Isolation Frequency") +
+#     scale_x_discrete("Location & Fungicide Treatment") +
+#     scale_fill_manual("", values = c("#66C2A5", "#FC8D62")) +
+#     theme(axis.text.x  = element_text(angle=60, vjust=0.5, size=14),
+#           legend.position="none")
+# ggplot(samp_means, aes(x = Trt, y = Sdiv_mean, fill = Site)) +
+#     geom_bar(stat = "identity", color = 'black') +
+#     geom_errorbar(aes(ymin=Sdiv_mean-Sdiv_sd, ymax=Sdiv_mean+Sdiv_sd), width=.2) +
+#     scale_y_continuous("Fungal Richness") +
+#     scale_x_discrete("Location & Fungicide Treatment") +
+#     scale_fill_manual("", values = c("#66C2A5", "#FC8D62")) +
+#     theme(axis.text.x  = element_text(angle=60, vjust=0.5, size=14),
+#           legend.position="none")
+
+```
+
+### Figures - Singletons barplot
+```{r}
+single_bar <- ggplot(samps, aes(x = Trt, y = Singles, fill = FungicideTrt)) +
+    geom_col() +
+    labs(y = "Count of Singletons", x = "Site-Treatment") +
+    #scale_x_discrete("Site-Treatment") +
+    scale_fill_manual("", values = c("#8DA0CB","#E78AC3")) +
+    theme(axis.text.x  = element_text(angle=60, vjust=0.5, size=10),
+          legend.position="none")
+
+#tiff("./SingletonCount.tiff", width=3.25, height=4, units="in", res=600)
+single_bar
+#dev.off()
+
+```
+
+
+
+# Structure
+### Models
+
+#### NO nested block random effect
+```{r}
+rrpp1 <- lm.rrpp(vegdist(SbyS.hel, method = "bray") ~  Site_short*FungicideTrt, 
+                 data = samps, iter = 9999, print.progress = FALSE, SS.type="III")   
+anova(rrpp1, effect.type = "F")
+#                   Df      SS      MS     Rsq      F       Z Pr(>F)  
+# Site               1  0.4943 0.49426 0.03612 1.3684 1.10656  0.143  
+# FungicideTrt       1  0.3887 0.38869 0.02841 1.0761 0.40707  0.344  
+# Site:FungicideTrt  1  0.5779 0.57792 0.04223 1.6000 1.46680  0.069 .
+# Residuals         32 11.5584 0.36120 0.84470                        
+# Total             35 13.6835             
+```
+
+#### YES nested block random effect
+```{r}
+rrpp1a <- lm.rrpp(vegdist(SbyS.hel, method = "bray") ~  Site_short + FungicideTrt +
+                      Site_short:FungicideTrt + Site_short:FungicideTrt:PlotNum,   
+                 data = samps, iter = 999, print.progress = FALSE, SS.type="III")   
+#anova(rrpp1a, effect.type = "F")
+anova(rrpp1a, effect.type = "F", 
+     error = c("Site_short:FungicideTrt:PlotNum", "Site_short:FungicideTrt:PlotNum",
+               "Site_short:FungicideTrt:PlotNum", "Residuals"))
+#                                 Df      SS      MS     Rsq      F        Z Pr(>F)  
+# Site_short                       1  0.6166 0.61663 0.04506 1.3798  1.90000  0.032 *
+# FungicideTrt                     1  0.3296 0.32957 0.02409 0.7375  0.12715  0.451  
+# Site_short:FungicideTrt          1  0.2418 0.24182 0.01767 0.5411 -0.74490  0.756  
+# Site_short:FungicideTrt:PlotNum  8  3.5752 0.44690 0.26128 1.3435  2.03221  0.023 *
+# Residuals                       24  7.9832 0.33263 0.58342                         
+# Total                           35 13.6835                                         
+```
+
+
+#### Models split by location
+```{r}
+samps_C <- samps[samps$Site_short=="C",] %>% droplevels
+samps_G <- samps[samps$Site_short=="G",] %>% droplevels
+SbyS.hel_C <- SbyS.hel[rownames(SbyS.hel) %in% samps_C$Sample_ID,]
+SbyS.hel_C <- SbyS.hel_C[,colSums(SbyS.hel_C)>0] #drop OTU13 and 14
+SbyS.hel_G <- SbyS.hel[rownames(SbyS.hel) %in% samps_G$Sample_ID,]
+SbyS.hel_G <- SbyS.hel_G[,colSums(SbyS.hel_G)>0] #drop OTU12
+
+
+### NO nested block random effect
+rrpp1_C <- lm.rrpp(vegdist(SbyS.hel_C, method = "bray") ~  FungicideTrt, 
+                 data = samps_C, iter = 9999, print.progress = FALSE, SS.type="III")   
+anova(rrpp1_C, effect.type = "F")
+#              Df    SS      MS    Rsq      F       Z Pr(>F)
+# FungicideTrt  1 0.263 0.26298 0.0687 1.1803 0.63438  0.254
+# Residuals    16 3.565 0.22281 0.9313                      
+# Total        17 3.828                                     
+rrpp1_G <- lm.rrpp(vegdist(SbyS.hel_G, method = "bray") ~  FungicideTrt, 
+                 data = samps_G, iter = 9999, print.progress = FALSE, SS.type="III")   
+anova(rrpp1_G, effect.type = "F")
+#              Df     SS      MS     Rsq      F      Z Pr(>F)  
+# FungicideTrt  1 0.5123 0.51227 0.11591 2.0978 1.8073  0.037 *
+# Residuals    16 3.9071 0.24419 0.88409                       
+# Total        17 4.4194                                       
+
+
+
+### YES nested block random effect
+rrpp1a_C <- lm.rrpp(vegdist(SbyS.hel_C, method = "bray") ~  FungicideTrt +
+                        FungicideTrt:PlotNum,
+                 data = samps_C, iter = 999, print.progress = FALSE, SS.type="III")   
+#anova(rrpp1a_C, effect.type = "F")
+anova(rrpp1a_C, effect.type = "F", 
+     error = c("FungicideTrt:PlotNum", "Residuals"))
+#                      Df     SS      MS     Rsq      F       Z Pr(>F)  
+# FungicideTrt          1 0.2146 0.21456 0.05605 0.7069 0.06591  0.470  
+# FungicideTrt:PlotNum  4 1.2140 0.30351 0.31714 1.5492 1.74713  0.041 *
+# Residuals            12 2.3510 0.19592 0.61415                        
+# Total                17 3.8280                                        
+                                        
+rrpp1a_G <- lm.rrpp(vegdist(SbyS.hel_G, method = "bray") ~  FungicideTrt +
+                        FungicideTrt:PlotNum,
+                 data = samps_G, iter = 999, print.progress = FALSE, SS.type="III")   
+#anova(rrpp1a_G, effect.type = "F")
+anova(rrpp1a_G, effect.type = "F", 
+     error = c("FungicideTrt:PlotNum", "Residuals"))
+#                      Df     SS      MS     Rsq      F       Z Pr(>F)
+# FungicideTrt          1 0.2940 0.29396 0.06652 0.9683 0.64802  0.260
+# FungicideTrt:PlotNum  4 1.2144 0.30360 0.27479 1.3530 1.19827  0.118
+# Residuals            12 2.6927 0.22439 0.60929                      
+# Total                17 4.4194                                      
+```
+
+
+```{r, include = FALSE}
+# adonis2
+comm1 <- adonis2(SbyS.hel ~  Site_short*FungicideTrt,
+                 data = samps, perm=10000, method='bray', by = 'margin' )
+comm1
+#                   Df SumOfSqs      R2      F   Pr(>F)
+# Site               1   0.3704 0.11034 4.4731 0.001999 **
+# FungicideTrt       1   0.1629 0.04853 1.9673 0.103632
+# Site:FungicideTrt  1   0.1738 0.05176 2.0984 0.076974 .
+# Residual          32   2.6501 0.78937
+# Total             35   3.3572 1.00000
+# comm1_C <- adonis2(SbyS.hel_C ~  FungicideTrt, 
+#                  data = samps_C, perm=9999, method='bray' )   
+# comm1_C
+# #          Df SumOfSqs      R2      F Pr(>F)
+# # Model     1  0.09467 0.07657 1.3268 0.2616
+# # Residual 16  1.14164 0.92343              
+# # Total    17  1.23631 1.00000              
+# comm1_G <- adonis2(SbyS.hel_G ~  FungicideTrt, 
+#                  data = samps_G, perm=9999, method='bray' )   
+# comm1_G
+# #          Df SumOfSqs      R2      F  Pr(>F)  
+# # Model     1  0.24202 0.13826 2.5671 0.04265 *
+# # Residual 16  1.50844 0.86174                 
+# # Total    17  1.75047 1.00000                 
+
+```
+
+### Figure
+```{r, echo = FALSE, results = 'hide'}
+# PCoA
+pcoa <- cmdscale(vegdist(SbyS.hel, method = "bray"), eig =TRUE)
+explainvar1 <- round(pcoa$eig[1] / sum(pcoa$eig), 3) * 100
+explainvar1
+explainvar2 <- round(pcoa$eig[2] / sum(pcoa$eig), 3) * 100 
+explainvar2
+
+PCoAscores <- as.data.frame(pcoa$points)
+PCoAscores$Sample_ID <- rownames(PCoAscores) 
+#merge the temporary and SbyE dataframes
+samps <- merge(PCoAscores, samps, by="Sample_ID")
+rownames(samps) <- samps$Sample_ID
+
+#data for ellipses
+ellipses.int <- data.frame() 
+for(g in levels(samps$Trt)){
+  ellipses.int <- rbind(ellipses.int, cbind(as.data.frame(with(
+    samps[samps$Trt==g,],
+    veganCovEllipse(cov.wt(cbind(V1,V2),
+         wt=rep(1/length(V1),length(V1)))$cov, 
+         center=c(mean(V1),mean(V2))))) , Trt=g))   }
+
+
+ord <- ggplot() +
+    coord_equal() +
+    geom_path(data = ellipses.int, aes(x = V1, y = V2, 
+          group = Trt, colour = Trt, linetype = Trt), linewidth = 1.4,  
+          show.legend = TRUE) +
+    geom_point(data = samps, aes(x = V1, y = V2, 
+          color = Trt, shape = Trt) , size = 4) +
+    scale_colour_manual("", values = trt_color) +
+    scale_linetype_manual("", values = c(1,2,1,2)) +
+    scale_shape_manual("", values = c(15,16,15,16)) +
+    scale_x_continuous(paste("PCoA 1 (", explainvar1, "%)", sep = "")) +
+    scale_y_continuous(paste("PCoA 2 (", explainvar2, "%)", sep = "")) +
+    guides(colour = guide_legend(nrow = 2)) +
+    theme(legend.position = "bottom",
+          legend.text = element_text(size = 12))
+
+#tiff("./Fig4_Ordination_trt.tiff", width=7, height=7, units="in", res=600)
+ord
+#dev.off()
+
+
+# ggplot() +
+#     # geom_path(data = ellipses.int, aes(x = V1, y = V2, 
+#     #       group = Trt, colour = Trt, linetype = Trt), linewidth = 1.4,  
+#     #       show.legend = TRUE) +
+#     geom_point(data = samps, aes(x = V1, y = V2, 
+#           color = Trt, shape = PlotID) , size = 4) +
+#     scale_colour_manual("", values = trt_color) +
+#     #scale_linetype_manual("", values = c(1,2,1,2)) +
+#     scale_shape_manual("", values = rep(c(15,19,17,18,10,12), 2)) +
+#     scale_x_continuous(paste("PCoA 1 (", explainvar1, "%)", sep = "")) +
+#     scale_y_continuous(paste("PCoA 2 (", explainvar2, "%)", sep = "")) +
+#     theme(legend.position = "bottom")
+
+
+```
+
+
+
+# Indicator Species Analysis
+```{r}
+myIndic1 <- multipatt(SbyS.noSing, samps$Site, control = how(nperm = 999), func = "IndVal.g")
+summary(myIndic1, indvalcomp = TRUE, alpha = 0.2)
+# OTU2:Epicoccum and OTU5:Pleosporales are specific to Champaign
+
+myIndic2 <- multipatt(SbyS.noSing, samps$FungicideTrt, control = how(nperm = 999), func = "IndVal.g")
+summary(myIndic2, indvalcomp = TRUE, alpha = 0.2)
+#  Group Delaro Complete 12oz  #sps.  1 
+#                      A      B  stat p.value
+# OTU6:Alternaria 0.8333 0.2778 0.481   0.167
+```
+
+
+
+```{r, include = FALSE}
+### Permuted over Plot
+# 12 plots total, but 6 per site, and 3 per site*fung trt combo (plot nested in site-fung combo)
+# samps$Trt_short <- samps$Trt; 
+# levels(samps$Trt_short)[1] <- "CControl"; levels(samps$Trt_short)[2] <- "CFungicide";
+# levels(samps$Trt_short)[3] <- "GControl"; levels(samps$Trt_short)[4] <- "GFungicide"
+
+# # fiddling
+# getStrata(myPERM)
+# getBlocks(myPERM)
+# getWithin(myPERM)
+# #check(samps, CTRL) # == factorial(36)
+# shuffle(samps, control = myPERM)
+# 
+# # 1.2.3, 10.11.12, 16.17.18 are Fung, while 4.5.6., 7.8.9, and 13.14.15 are Cont
+# samps[,c("PlotNum", "Site_short", "Trt_short")]
+# samps2 <- samps %>% filter(Site_short == "C") %>% droplevels()
+
+# # permutation analysis
+# CTRL <- how(nperm = 999)
+# myPERM <- how(nperm = 999,
+#               within = Within(type = "free"),
+#               plots = Plots(strata = samps$PlotID, type = "free"),
+#               blocks = samps$Trt_short,
+#               observed = TRUE)
+
+
+# myIndic1a <- multipatt(SbyS.noSing, samps$Site, 
+#         control = myPERM, func = "IndVal.g")
+# summary(myIndic1a, indvalcomp = TRUE, alpha = 0.2)
+# 
+# 
+# myIndic1b <- multipatt(SbyS.noSing, samps$Site, 
+#         control = CTRL, func = "IndVal.g")
+# summary(myIndic1b, indvalcomp = TRUE, alpha = 0.2)
+
+```
+
+### Figure
+```{r, results = 'hide', echp = FALSE}
+IndValSignif <- c("OTU2:Epicoccum", "OTU5:Pleosporales", "OTU6:Alternaria")
+
+dat3 <- dat2[dat2$variable %in% IndValSignif,]
+#dim(dat3)
+
+indval <- ggplot(dat3, aes(x = Trt, y = value, fill = Site)) +
+    facet_grid(variable~., scales = "free") +
+    geom_violin() +
+    geom_jitter(width=.15, height = 0) +
+    scale_fill_manual("Names", values = trt_color[c(1,3)]) +
+    scale_x_discrete("Site-Treatment") + 
+    scale_y_continuous("Fungal Relative Abundance per Plant") +
+    theme(axis.text.x  = element_text(angle=60, vjust=0.5, size=10)) +
+    guides(fill = "none")
+#tiff("./Fig5_Indicator_OTUs.tiff", width=3.25, height=6.25, units="in", res=600)
+indval
+#dev.off()
+```
+
+# Choose what to archive
+```{r, include = FALSE}
+#samps_otu %>% select(Sample_ID, PlotID, Trt, starts_with("OTU")) -> out
+#write.csv(out, "./Data/CornDebrisFungicides_Sample_OTUs_2023-06-07.csv")
+
+
+# for the most abundant OTUs, will archive 5 replicates per site-Trt combo, if it exists
+only5reps <- c("OTU1", "OTU2", "OTU3", "OTU4", "OTU5")
+
+highAbundToArchive <- done %>% filter(OTU %in% only5reps) %>% droplevels() %>% 
+    group_by(OTU, Site, FungicideTrt) %>% 
+    slice_sample(n=5)
+ # really neat funciton from dplyr --> slice_sample to randomly select samples by group
+length(highAbundToArchive$Project_Specific_Culture_ID)
+#77 isolates (updated now 82)
+
+table(highAbundToArchive$OTU)
+table(highAbundToArchive$OTU, highAbundToArchive$FungicideTrt)
+table(highAbundToArchive$OTU, highAbundToArchive$Site)
+
+
+# for the least abundant OTUs and singletons, just archive everything 
+lowAbundToArchive <- droplevels(done[done$OTU %nin% only5reps, ])
+length(lowAbundToArchive$Project_Specific_Culture_ID)
+#48 = 18 singletons (OTU15-OTU32) + 30 isolates to archive from the low abundance OTUs (OTU6-OTU14)
+# updated now 51 = 18 + 33
+
+
+# combine
+ToArchive <- rbind(highAbundToArchive, lowAbundToArchive)
+ToArchive <- droplevels(ToArchive)
+ToArchive <- ungroup(ToArchive)
+# 125 = 77 + 48   (updated now 133 = 82 + 51)
+ToArchive <- ToArchive[order(ToArchive$Sample_ID, ToArchive$Project_Specific_Culture_ID),]
+ToArchive %>% dplyr::select(Project_Specific_Culture_ID, OTU) -> out
+
+#write.csv(out, "./Data/CornDebrisFungicides_ToArchive_2023-06-27.csv")
+
+```
+
+
+
+
+#### end
+```{r}
+sessionInfo()
+```
