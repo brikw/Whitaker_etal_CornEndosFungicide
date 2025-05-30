@@ -1,7 +1,7 @@
 # "Foliar fungicide application alters the culturable foliar fungal endophyte community in corn"
 ### Whitaker, B.K., Opoku, J., Kleczewski, N.M.
 
-(DOI here)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15557618.svg)](https://doi.org/10.5281/zenodo.15557618)
 
 This repository includes the R code, data files, and small scriptsto supplement the manuscript by Whitaker et al. "Foliar fungicide application alters the culturable foliar fungal endophyte community in corn".
 
